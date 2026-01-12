@@ -308,8 +308,11 @@ export class VoipAgent {
         });
         this.voip.inCall = true;
         if (this.voip.mode === "prod") {
+            const normalized_number = phone_number
+              .trim()
+              .replace(/(?!^\+)\D/g, "");
             const destination_number = SIP.UserAgent.makeURI(
-                `sip:${phone_number.replace(/\D/g, "")}@${this.voip.pbx_domain}`
+              `sip:${normalized_number}@${this.voip.pbx_domain}`
             );
             this.session = new SIP.Inviter(this.agent, destination_number);
             this.session.delegate = {
