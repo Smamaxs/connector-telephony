@@ -31,4 +31,6 @@
             "voip_oca/static/tests/**/*",
         ],
     },
+
+    "installable": True,
 }
