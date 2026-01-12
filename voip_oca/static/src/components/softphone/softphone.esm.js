@@ -42,8 +42,11 @@ export class VoipOCASoftphone extends Component {
     get childComponentProps() {
         const props = {};
         const element = registry.category("voip_elements").get(this.voip.selectedTab);
-        if (element.input) {
-            props.records = this.voip[element.input];
+        // Provide a safe default for records to avoid template runtime errors
+        if (element && element.input) {
+            props.records = this.voip[element.input] || [];
+        } else {
+            props.records = [];
         }
         return props;
     }

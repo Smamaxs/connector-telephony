@@ -19,7 +19,7 @@ export class CallList extends Component {
         this.voip.open({call: call});
     }
 }
-CallList.props = {records: {type: Array}};
+CallList.props = {records: {type: Array, optional: true}};
 CallList.template = "voip_oca.CallList";
 
 registry.category("voip_elements").add("call_list", {

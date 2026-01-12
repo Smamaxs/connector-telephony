@@ -84,19 +84,11 @@ class VoipOcaCall(models.Model):
 
     @api.model
     def create_call(self, values):
+        print(values)
         if not values.get("partner_id"):
-            values["partner_id"] = (
-                self.env["res.partner"]
-                .search(
-                    [
-                        "|",
-                        ("phone", "=", values.get("phone_number")),
-                        ("mobile", "=", values.get("phone_number")),
-                    ],
-                    limit=1,
-                )
-                .id
-            )
+            values["partner_id"] = self.env["res.partner"].search(
+                [("phone", "=", values.get("phone_number"))],
+                limit=1).id
         return self.create(values).format_call()
 
     def terminate_call(self):

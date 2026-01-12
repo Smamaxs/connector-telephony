@@ -17,7 +17,6 @@ export class Partner extends Component {
     get phoneNumber() {
         return (
             this.props.call.phoneNumber ||
-            this.props.partner.mobileNumber ||
             this.props.partner.landlineNumber
         );
     }

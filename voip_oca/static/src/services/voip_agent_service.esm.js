@@ -234,9 +234,21 @@ export class VoipAgent {
             },
         ]);
 
-        this.voip.call = this.store.Call.insert(call);
+        // Use store models if available, otherwise use the service-level fallback
+        const callModel = (this.store && this.store.Call) || this.voip._getStoreModel("Call");
+        const personaModel = (this.store && this.store.Persona) || this.voip._getStoreModel("Persona");
+
+        if (callModel && typeof callModel.insert === "function") {
+            this.voip.call = callModel.insert(call);
+        } else {
+            this.voip.call = call;
+        }
         if (call.partner) {
-            this.voip.partner = this.store.Persona.insert({...call.partner});
+            if (personaModel && typeof personaModel.insert === "function") {
+                this.voip.partner = personaModel.insert({...call.partner, type: "partner"});
+            } else {
+                this.voip.partner = {...call.partner, type: "partner"};
+            }
         }
     }
     async call({number, partner}) {
@@ -245,7 +257,7 @@ export class VoipAgent {
         this.voip.isFolded = false;
         var phone_number = number;
         if (!number && partner) {
-            phone_number = partner.mobileNumber || partner.landlineNumber;
+            phone_number = partner.landlineNumber;
         }
         this.playTone("dialtone");
         await this.createCall({

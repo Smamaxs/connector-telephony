@@ -81,20 +81,25 @@ export class VoipOCA {
     /* Elements */
 
     get partners() {
-        return Object.values(this.store.Persona.records).filter(
+        const records = this.store && this.store.Persona && this.store.Persona.records
+            ? this.store.Persona.records
+            : {};
+        return Object.values(records).filter(
             (partner) =>
                 partner.hasPhoneNumber &&
                 (!this.searchValue ||
                     [
                         partner.name,
                         partner.displayName,
-                        partner.mobileNumber,
                         partner.landlineNumber,
                     ].some((x) => matchString(x, this.searchValue)))
         );
     }
     get activities() {
-        return Object.values(this.store.Activity.records).filter(
+        const records = this.store && this.store.Activity && this.store.Activity.records
+            ? this.store.Activity.records
+            : {};
+        return Object.values(records).filter(
             (activity) =>
                 (!this.searchValue ||
                     [activity.summary, activity.resName, activity.main_partner].some(
@@ -107,7 +112,10 @@ export class VoipOCA {
     }
 
     get calls() {
-        return Object.values(this.store.Call.records)
+        const records = this.store && this.store.Call && this.store.Call.records
+            ? this.store.Call.records
+            : {};
+        return Object.values(records)
             .filter(
                 (call) =>
                     !this.searchValue ||

@@ -14,16 +14,16 @@ defineVoipModels();
 
 test("Check Partner Tab", async () => {
     const pyEnv = await startServer();
-    pyEnv["res.partner"].create({
-        name: "Test Partner",
-        display_name: "Test Partner",
-        mobile: "123456789",
-    });
-    pyEnv["res.partner"].create({
-        name: "Test Partner 2",
-        display_name: "Test Partner",
-        mobile: "123456789",
-    });
+    // pyEnv["res.partner"].create({
+    //     name: "Test Partner",
+    //     display_name: "Test Partner",
+    //     mobile: "123456789",
+    // });
+    // pyEnv["res.partner"].create({
+    //     name: "Test Partner 2",
+    //     display_name: "Test Partner",
+    //     mobile: "123456789",
+    // });
     patchWithCleanup(session, {
         ...session,
         voip: {pbx_id: 1},

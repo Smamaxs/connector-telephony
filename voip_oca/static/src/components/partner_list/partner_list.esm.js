@@ -19,7 +19,7 @@ export class PartnerList extends Component {
         this.voip.open({partner});
     }
 }
-PartnerList.props = {records: {type: Array}};
+PartnerList.props = {records: {type: Array, optional: true}};
 PartnerList.template = "voip_oca.PartnerList";
 
 registry.category("voip_elements").add("partner_list", {

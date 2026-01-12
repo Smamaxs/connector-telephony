@@ -19,7 +19,7 @@ export class ActivityList extends Component {
         this.voip.open({activity: activity});
     }
 }
-ActivityList.props = {records: {type: Array}};
+ActivityList.props = {records: {type: Array, optional: true}};
 ActivityList.template = "voip_oca.ActivityList";
 
 registry.category("voip_elements").add("activity_list", {

@@ -3,7 +3,7 @@
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <templates xml:space="preserve">
     <t t-name="voip_oca.CallList">
-        <t t-foreach="props.records" t-as="call" t-key="call.id">
+        <t t-foreach="props.records || []" t-as="call" t-key="call.id">
             <div
                 class="o_voip_call_item d-flex flex-column p-3 cursor-pointer"
                 t-on-click="() => this.onClick(call)"
