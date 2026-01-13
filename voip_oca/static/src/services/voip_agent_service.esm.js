@@ -276,7 +276,7 @@ export class VoipAgent {
 
         // Use store models if available, otherwise use the service-level fallback
         const callModel = this._getStoreModel("Call");
-        const personaModel = this._getStoreModel("Persona");
+        const personaModel = this._getStoreModel("ResPartner");
 
         if (callModel && typeof callModel.insert === "function") {
             this.voip.call = callModel.insert(call);

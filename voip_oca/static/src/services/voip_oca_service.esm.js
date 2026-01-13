@@ -41,7 +41,7 @@ export class VoipOCA {
         this.user = env.services.user;
         // Provide a local store model getter that prefers the mail.store model,
         // falls back to an in-memory model when not present. This avoids
-        // runtime errors when the mail.store doesn't expose Persona/Activity/Call
+        // runtime errors when the mail.store doesn't expose ResPartner/Activity/Call
         this._getStoreModel = (name) => {
             if (this.store && this.store[name]) {
                 return this.store[name];
@@ -111,7 +111,7 @@ export class VoipOCA {
     /* Elements */
 
     get partners() {
-        const records = (this._getStoreModel("Persona") && this._getStoreModel("Persona").records) ? this._getStoreModel("Persona").records : {};
+        const records = (this._getStoreModel("ResPartner") && this._getStoreModel("ResPartner").records) ? this._getStoreModel("ResPartner").records : {};
         return Object.values(records).filter(
             (partner) =>
                 partner.hasPhoneNumber &&
@@ -164,7 +164,7 @@ export class VoipOCA {
             limit,
             _search,
         });
-        const model = this._getStoreModel("Persona");
+        const model = this._getStoreModel("ResPartner");
         for (const partner of partners) {
             model.insert({...partner, type: "partner"});
         }
