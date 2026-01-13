@@ -39,6 +39,36 @@ export class VoipOCA {
             },
         };
         this.user = env.services.user;
+        // Provide a local store model getter that prefers the mail.store model,
+        // falls back to an in-memory model when not present. This avoids
+        // runtime errors when the mail.store doesn't expose Persona/Activity/Call
+        this._getStoreModel = (name) => {
+            if (this.store && this.store[name]) {
+                return this.store[name];
+            }
+            if (!this.__localStore) {
+                this.__localStore = {};
+            }
+            if (!this.__localStore[name]) {
+                const model = {
+                    records: {},
+                    insert(obj) {
+                        const id = obj.id || Math.floor(Math.random() * 1e9);
+                        model.records[id] = obj;
+                        const record = Object.assign({}, obj);
+                        record.id = id;
+                        record.update = function (data) {
+                            model.records[id] = Object.assign(model.records[id] || {}, data);
+                            Object.assign(this, model.records[id]);
+                            return this;
+                        };
+                        return record;
+                    },
+                };
+                this.__localStore[name] = model;
+            }
+            return this.__localStore[name];
+        };
         // We will make this service reactive,
         // this way we will hanble the changes on the component
         return reactive(this);
@@ -81,9 +111,7 @@ export class VoipOCA {
     /* Elements */
 
     get partners() {
-        const records = this.store && this.store.Persona && this.store.Persona.records
-            ? this.store.Persona.records
-            : {};
+        const records = (this._getStoreModel("Persona") && this._getStoreModel("Persona").records) ? this._getStoreModel("Persona").records : {};
         return Object.values(records).filter(
             (partner) =>
                 partner.hasPhoneNumber &&
@@ -96,9 +124,7 @@ export class VoipOCA {
         );
     }
     get activities() {
-        const records = this.store && this.store.Activity && this.store.Activity.records
-            ? this.store.Activity.records
-            : {};
+        const records = (this._getStoreModel("Activity") && this._getStoreModel("Activity").records) ? this._getStoreModel("Activity").records : {};
         return Object.values(records).filter(
             (activity) =>
                 (!this.searchValue ||
@@ -112,9 +138,7 @@ export class VoipOCA {
     }
 
     get calls() {
-        const records = this.store && this.store.Call && this.store.Call.records
-            ? this.store.Call.records
-            : {};
+        const records = (this._getStoreModel("Call") && this._getStoreModel("Call").records) ? this._getStoreModel("Call").records : {};
         return Object.values(records)
             .filter(
                 (call) =>
@@ -140,8 +164,9 @@ export class VoipOCA {
             limit,
             _search,
         });
+        const model = this._getStoreModel("Persona");
         for (const partner of partners) {
-            this.store.Persona.insert({...partner, type: "partner"});
+            model.insert({...partner, type: "partner"});
         }
     }
     async searchActivities(_search = "", offset = 0, limit = 13) {
@@ -158,8 +183,9 @@ export class VoipOCA {
         if (!activities["mail.activity"]) {
             return;
         }
+        const model = this._getStoreModel("Activity");
         for (const activity of activities["mail.activity"]) {
-            this.store.Activity.insert({...activity});
+            model.insert({...activity});
         }
     }
     async searchCalls(_search = "", offset = 0, limit = 13) {
@@ -168,8 +194,9 @@ export class VoipOCA {
             limit,
             _search,
         });
+        const model = this._getStoreModel("Call");
         for (const call of calls) {
-            this.store.Call.insert({...call});
+            model.insert({...call});
         }
     }
     /* Image functions */
