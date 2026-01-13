@@ -16,6 +16,7 @@ export class VoipOCA {
         /* Store voip data in the service, not the session */
         Object.assign(this, session.voip);
         delete session.voip;
+        this._partners = [];
         this.status = "disconnected";
         this.selectedTab = "activity_list";
         this.uid = user.userId;
@@ -39,36 +40,6 @@ export class VoipOCA {
             },
         };
         this.user = env.services.user;
-        // Provide a local store model getter that prefers the mail.store model,
-        // falls back to an in-memory model when not present. This avoids
-        // runtime errors when the mail.store doesn't expose ResPartner/Activity/Call
-        this._getStoreModel = (name) => {
-            if (this.store && this.store[name]) {
-                return this.store[name];
-            }
-            if (!this.__localStore) {
-                this.__localStore = {};
-            }
-            if (!this.__localStore[name]) {
-                const model = {
-                    records: {},
-                    insert(obj) {
-                        const id = obj.id || Math.floor(Math.random() * 1e9);
-                        model.records[id] = obj;
-                        const record = Object.assign({}, obj);
-                        record.id = id;
-                        record.update = function (data) {
-                            model.records[id] = Object.assign(model.records[id] || {}, data);
-                            Object.assign(this, model.records[id]);
-                            return this;
-                        };
-                        return record;
-                    },
-                };
-                this.__localStore[name] = model;
-            }
-            return this.__localStore[name];
-        };
         // We will make this service reactive,
         // this way we will hanble the changes on the component
         return reactive(this);
@@ -111,10 +82,9 @@ export class VoipOCA {
     /* Elements */
 
     get partners() {
-        const records = (this._getStoreModel("ResPartner") && this._getStoreModel("ResPartner").records) ? this._getStoreModel("ResPartner").records : {};
-        return Object.values(records).filter(
+        return this._partners.filter(
             (partner) =>
-                partner.hasPhoneNumber &&
+                Boolean(partner.landlineNumber) &&
                 (!this.searchValue ||
                     [
                         partner.name,
@@ -123,23 +93,22 @@ export class VoipOCA {
                     ].some((x) => matchString(x, this.searchValue)))
         );
     }
+
     get activities() {
-        const records = (this._getStoreModel("Activity") && this._getStoreModel("Activity").records) ? this._getStoreModel("Activity").records : {};
-        return Object.values(records).filter(
-            (activity) =>
-                (!this.searchValue ||
-                    [activity.summary, activity.resName, activity.main_partner].some(
-                        (x) => matchString(x, this.searchValue)
-                    )) &&
-                new Date(activity.date_deadline) <= new Date() &&
-                activity.activity_category === "phonecall" &&
-                activity.user_id[0] === this.uid
-        );
+        // return Object.values(this.store.Activity.records).filter(
+        //     (activity) =>
+        //         (!this.searchValue ||
+        //             [activity.summary, activity.resName, activity.main_partner].some(
+        //                 (x) => matchString(x, this.searchValue)
+        //             )) &&
+        //         new Date(activity.date_deadline) <= new Date() &&
+        //         activity.activity_category === "phonecall" &&
+        //         activity.user_id[0] === this.uid
+        // );
     }
 
     get calls() {
-        const records = (this._getStoreModel("Call") && this._getStoreModel("Call").records) ? this._getStoreModel("Call").records : {};
-        return Object.values(records)
+        return Object.values(this.store.Call.records)
             .filter(
                 (call) =>
                     !this.searchValue ||
@@ -159,34 +128,41 @@ export class VoipOCA {
 
     /* Search functions */
     async searchPartners(_search = "", offset = 0, limit = 13) {
-        const partners = await this.orm.call("res.partner", "voip_get_contacts", [], {
-            offset,
-            limit,
-            _search,
-        });
-        const model = this._getStoreModel("ResPartner");
+        const partners = await this.orm.call(
+            "res.partner", "voip_get_contacts", [],
+            {offset, limit, _search, }
+        );
+
+        if (offset === 0) {
+            this._partners = [];
+        }
+
         for (const partner of partners) {
-            model.insert({...partner, type: "partner"});
+            if (!this._partners.some((p) => p.id === partner.id)) {
+                this._partners.push({
+                    ...partner,
+                    type: "partner",
+                });
+            }
         }
     }
     async searchActivities(_search = "", offset = 0, limit = 13) {
-        const activities = await this.orm.call(
-            "mail.activity",
-            "get_call_activities",
-            [],
-            {
-                offset,
-                limit,
-                _search,
-            }
-        );
-        if (!activities["mail.activity"]) {
-            return;
-        }
-        const model = this._getStoreModel("Activity");
-        for (const activity of activities["mail.activity"]) {
-            model.insert({...activity});
-        }
+        // const activities = await this.orm.call(
+        //     "mail.activity",
+        //     "get_call_activities",
+        //     [],
+        //     {
+        //         offset,
+        //         limit,
+        //         _search,
+        //     }
+        // );
+        // if (!activities["mail.activity"]) {
+        //     return;
+        // }
+        // for (const activity of activities["mail.activity"]) {
+        //     this.store.Activity.insert({...activity});
+        // }
     }
     async searchCalls(_search = "", offset = 0, limit = 13) {
         const calls = await this.orm.call("voip.call", "get_recent_calls", [], {
@@ -194,9 +170,8 @@ export class VoipOCA {
             limit,
             _search,
         });
-        const model = this._getStoreModel("Call");
         for (const call of calls) {
-            model.insert({...call});
+            this.store.Call.insert({...call});
         }
     }
     /* Image functions */

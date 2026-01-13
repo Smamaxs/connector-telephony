@@ -22,46 +22,6 @@ export class VoipAgent {
         this.isMuted = false;
         this.isHolded = false;
         this.store = services["mail.store"];
-        // Provide a local store model getter that prefers the mail.store model,
-        // falls back to the voip service helper if available, or creates a
-        // lightweight in-memory model when neither is present. This avoids
-        // runtime errors when the deployed voip service doesn't expose
-        // _getStoreModel (assets out of sync / older bundle).
-        this._getStoreModel = (name) => {
-            if (this.store && this.store[name]) {
-                return this.store[name];
-            }
-            if (this.voip && typeof this.voip._getStoreModel === "function") {
-                try {
-                    return this.voip._getStoreModel(name);
-                } catch (e) {
-                    // continue to local fallback
-                }
-            }
-            // local lightweight fallback
-            if (!this.__localStore) {
-                this.__localStore = {};
-            }
-            if (!this.__localStore[name]) {
-                const model = {
-                    records: {},
-                    insert(obj) {
-                        const id = obj.id || Math.floor(Math.random() * 1e9);
-                        model.records[id] = obj;
-                        const record = Object.assign({}, obj);
-                        record.id = id;
-                        record.update = function (data) {
-                            model.records[id] = Object.assign(model.records[id] || {}, data);
-                            Object.assign(this, model.records[id]);
-                            return this;
-                        };
-                        return record;
-                    },
-                };
-                this.__localStore[name] = model;
-            }
-            return this.__localStore[name];
-        };
         this.connectAgent();
         return reactive(this);
     }
@@ -274,21 +234,9 @@ export class VoipAgent {
             },
         ]);
 
-        // Use store models if available, otherwise use the service-level fallback
-        const callModel = this._getStoreModel("Call");
-        const personaModel = this._getStoreModel("ResPartner");
-
-        if (callModel && typeof callModel.insert === "function") {
-            this.voip.call = callModel.insert(call);
-        } else {
-            this.voip.call = call;
-        }
+        this.voip.call = this.store.Call.insert(call);
         if (call.partner) {
-            if (personaModel && typeof personaModel.insert === "function") {
-                this.voip.partner = personaModel.insert({...call.partner, type: "partner"});
-            } else {
-                this.voip.partner = {...call.partner, type: "partner"};
-            }
+            this.voip.partner = {...call.partner};
         }
     }
     async call({number, partner}) {

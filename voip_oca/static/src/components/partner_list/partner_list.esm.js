@@ -25,7 +25,7 @@ PartnerList.template = "voip_oca.PartnerList";
 registry.category("voip_elements").add("partner_list", {
     component: PartnerList,
     order: 30,
-    title: _t("Contacts"),
+    title: _t("Contact"),
     input: "partners",
     search: (voip, value) => voip.searchPartners(value),
     call: (voip) => {
